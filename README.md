@@ -184,7 +184,7 @@ src/
 
 ## 🧑‍💻 Author
 
-Developed by \[Avnitt]
+Developed by \[Avnitt]<br />
 Open to contributions and improvements!
 
 ---
@@ -192,5 +192,3 @@ Open to contributions and improvements!
 ## 🛡️ License
 
 MIT License
-
-```
