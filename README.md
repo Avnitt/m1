@@ -1,8 +1,3 @@
-Here’s a complete `README.md` for your backend project. It includes project overview, setup, environment config, Redis/WebSocket handling, and frontend integration instructions.
-
----
-
-````markdown
 # 🎲 Betfair Real-Time Data Service
 
 This project is a FastAPI-based backend for **real-time betting event and market data delivery**. It connects to a third-party API (like Betfair), processes events and markets, and delivers data to frontend clients over WebSockets. It uses Redis Pub/Sub for real-time message broadcasting and `APScheduler` to poll data periodically.
