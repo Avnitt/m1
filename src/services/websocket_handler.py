@@ -48,7 +48,7 @@ class WebSocketManager:
             self.scheduler.add_market_job(event_id)
 
         logging.info(f"Added connection to {event_id} (total: {len(self.connections[event_id])})")
-        await self._send_markets_data(websocket, event_id)
+        await self._send_markets_data(event_id, websocket)
         self._start_listener(f"markets_channel:{event_id}", websocket)
 
     async def _send_events_data(self, websocket: WebSocket):
