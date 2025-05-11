@@ -6,6 +6,8 @@ from .services.api_client import APIClient
 from .services.redis_client import RedisClient
 from .services.scheduler import SchedulerService
 from .services.websocket_handler import WebSocketManager
+from .database import create_db_and_tables
+from .routers import users
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
@@ -21,6 +23,7 @@ async def lifespan(app: FastAPI):
         scheduler_service=app.state.scheduler,
         api_client_cls=APIClient
     )
+    create_db_and_tables()
     yield
     logger.info("Shutting down application...")
     await app.state.redis_client.close()
@@ -28,6 +31,8 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete")
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(users.router)
 
 @app.get("/")
 async def root():
