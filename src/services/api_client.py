@@ -1,9 +1,9 @@
 import os
 import httpx
-from utils.processer import process_event_data, process_market_data
 import logging
-from .redis_client import redis_client
 from dotenv import load_dotenv
+
+from ..utils.processer import process_event_data, process_market_data
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,9 +18,9 @@ class APIClient:
     """
 
     def __init__(self):
-        self.base_url = os.getenv("BASE_URL")
+        self.base_url = BASE_URL
         self.headers = {
-            "x-rapidapi-key": os.getenv("X_RAPIDAPI_KEY"),
+            "x-rapidapi-key": X_RAPIDAPI_KEY,
             "x-rapidapi-host": "betfair-sports-casino-live-tv-result-odds.p.rapidapi.com",
         }
         self.timeout = 10
@@ -39,6 +39,7 @@ class APIClient:
     async def fetch_markets(self, event_id: str) -> httpx.Response | None:
         try:
             response = await self.client.get("/GetSession/", params={"eventid": event_id})
+            logging.info(response.json())
             response.raise_for_status()
             logging.info(f"Fetched markets successfully: {response.status_code}")
             return process_market_data(response.json())

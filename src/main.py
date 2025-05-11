@@ -1,33 +1,30 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import logging
-from services.redis_client import redis_client
-from services.scheduler import SchedulerService
-from services.api_client import APIClient
-from services.websocket_handler import WebSocketManager
+
+from .services.api_client import APIClient
+from .services.redis_client import RedisClient
+from .services.scheduler import SchedulerService
+from .services.websocket_handler import WebSocketManager
 
 logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize shared components
-    scheduler_service = SchedulerService()
-    
-    # Initialize WebSocket manager
+    app.state.redis_client = RedisClient()
+    app.state.scheduler = SchedulerService(app)
+    app.state.scheduler.add_event_job()
     app.state.ws_manager = WebSocketManager(
-        redis_client=redis_client,
-        scheduler_service=scheduler_service,
+        redis_client=app.state.redis_client,
+        scheduler_service=app.state.scheduler,
         api_client_cls=APIClient
     )
-    
-    # Start background tasks
-    scheduler_service.add_event_job()
     
     yield  # Application runs here
     
     # Cleanup on shutdown
-    await redis_client.close()
-    scheduler_service.stop()
+    await app.state.redis_client.close()
+    app.state.scheduler.stop()
     logging.info("Application shutdown complete")
 
 app = FastAPI(lifespan=lifespan)
@@ -45,7 +42,3 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         await ws_manager.disconnect_all(websocket)
         logging.info("WebSocket client disconnected")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run('main:app', host="0.0.0.0", port=8000, log_level="warning", reload=True)

@@ -1,6 +1,4 @@
-import json
 import os
-from typing import Optional
 import redis.asyncio as redis
 import logging
 from dotenv import load_dotenv
@@ -78,5 +76,5 @@ class RedisClient:
         except Exception as e:
             logging.error(f"Error closing Redis connection: {e}")
 
-redis_client = RedisClient()
-logging.info("Redis client initialized.")
+# redis_client = RedisClient()
+# logging.info("Redis client initialized.")
