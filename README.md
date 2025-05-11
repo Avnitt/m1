@@ -194,5 +194,3 @@ Open to contributions and improvements!
 MIT License
 
 ```
-
----
