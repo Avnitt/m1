@@ -37,7 +37,7 @@ class WebSocketManager:
 
     async def subscribe_to_events(self, websocket: WebSocket):
         self.connections.setdefault("events", set()).add(websocket)
-        await self.send_events_data(websocket)
+        await self._send_events_data(websocket)
         self._start_listener("events_channel", websocket)
 
     async def subscribe_to_markets(self, event_id: str, websocket: WebSocket):
@@ -48,20 +48,10 @@ class WebSocketManager:
             self.scheduler.add_market_job(event_id)
 
         logging.info(f"Added connection to {event_id} (total: {len(self.connections[event_id])})")
-
-        cached = await self.redis_client.get(f"markets:{event_id}")
-        if cached:
-            await websocket.send_text(cached)
-        else:
-            async with self.api_client_cls() as client:
-                response = await client.fetch_markets(event_id)
-                if response:
-                    await websocket.send_text(json.dumps(response))
-                    logging.info("Sent freshly fetched markets data to WebSocket")
-
+        await self._send_markets_data(websocket, event_id)
         self._start_listener(f"markets_channel:{event_id}", websocket)
 
-    async def send_events_data(self, websocket: WebSocket):
+    async def _send_events_data(self, websocket: WebSocket):
         events_data = await self.redis_client.get("events")
         if events_data:
             await websocket.send_text(events_data)
@@ -71,7 +61,26 @@ class WebSocketManager:
                 response = await client.fetch_events()
                 if response:
                     await websocket.send_text(json.dumps({"events": response}))
+                    await self.redis_client.set("events", json.dumps(response))
                     logging.info("Sent freshly fetched events data to WebSocket")
+                else:
+                    logging.warning("No events data found")
+
+
+    async def _send_markets_data(self, event_id: str, websocket: WebSocket):
+        markets_data = await self.redis_client.get(f"markets:{event_id}")
+        if markets_data:
+            await websocket.send_text(markets_data)
+            logging.info(f"Sent cached markets data for {event_id} to WebSocket")
+        else:
+            async with self.api_client_cls() as client:
+                response = await client.fetch_markets(event_id=event_id)
+                if response:
+                    await websocket.send_text(json.dumps({"markets": response}))
+                    await self.redis_client.set(f"markets:{event_id}", json.dumps(response))
+                    logging.info(f"Sent freshly fetched markets data for {event_id} to WebSocket")
+                else:
+                    logging.warning(f"No markets data found for event {event_id}")
 
     def _start_listener(self, channel: str, websocket: WebSocket):
         key = (channel, websocket)

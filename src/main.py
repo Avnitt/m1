@@ -8,9 +8,11 @@ from .services.scheduler import SchedulerService
 from .services.websocket_handler import WebSocketManager
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting application...")
     app.state.redis_client = RedisClient()
     app.state.scheduler = SchedulerService(app)
     app.state.scheduler.add_event_job()
@@ -19,13 +21,11 @@ async def lifespan(app: FastAPI):
         scheduler_service=app.state.scheduler,
         api_client_cls=APIClient
     )
-    
-    yield  # Application runs here
-    
-    # Cleanup on shutdown
+    yield
+    logger.info("Shutting down application...")
     await app.state.redis_client.close()
     app.state.scheduler.stop()
-    logging.info("Application shutdown complete")
+    logger.info("Shutdown complete")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -41,4 +41,4 @@ async def websocket_endpoint(websocket: WebSocket):
         await ws_manager.listen(websocket)
     except WebSocketDisconnect:
         await ws_manager.disconnect_all(websocket)
-        logging.info("WebSocket client disconnected")
+        logger.info("WebSocket client disconnected")

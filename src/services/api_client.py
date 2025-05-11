@@ -39,7 +39,6 @@ class APIClient:
     async def fetch_markets(self, event_id: str) -> httpx.Response | None:
         try:
             response = await self.client.get("/GetSession/", params={"eventid": event_id})
-            logging.info(response.json())
             response.raise_for_status()
             logging.info(f"Fetched markets successfully: {response.status_code}")
             return process_market_data(response.json())

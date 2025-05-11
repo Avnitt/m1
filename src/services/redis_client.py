@@ -8,9 +8,11 @@ logging.basicConfig(level=logging.INFO)
 # Load environment variables
 load_dotenv()
 
+REDIS_URL = os.getenv("REDIS_URL")
+
 class RedisClient:
     def __init__(self):
-        self.redis_url = os.getenv("REDIS_URL")
+        self.redis_url = REDIS_URL
         self.redis_client = redis.from_url(
             url=self.redis_url,
             decode_responses=True
