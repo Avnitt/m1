@@ -1,212 +1,198 @@
-# 🎲 Betfair Real-Time Data Service
+# 🎯 Betfair Real-time Data Service (FastAPI Backend)
 
-This project is a FastAPI-based backend for **real-time betting event and market data delivery**. It connects to a third-party API (like Betfair), processes events and markets, and delivers data to frontend clients over WebSockets. It uses Redis Pub/Sub for real-time message broadcasting and `APScheduler` to poll data periodically.
-
----
-
-## 📦 Features
-
-- 🔄 Real-time WebSocket updates for events and market data
-- ⚙️ Background polling using `APScheduler`
-- 🔌 Redis Pub/Sub for efficient data delivery
-- 🌐 Modular FastAPI architecture
-- 📡 Easily connectable to any frontend (React, Vue, etc.)
+This is a FastAPI-based real-time backend service designed to fetch, cache, and distribute **sports event and market data** via **WebSockets**, with background job scheduling and Redis Pub/Sub support.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Features
 
-### ✅ Prerequisites
-
-- Python 3.10+
-- Redis server (local or cloud)
-- Optional: `.env` file for environment variables
+- 📡 WebSocket API for real-time communication
+- 🔁 Background polling via APScheduler (for both events and markets)
+- 🧠 Redis-based caching and pub/sub distribution
+- ♻️ Smart resource usage: Only fetches markets when clients subscribe
+- 📁 Modular, scalable project structure
+- 🧪 Easily integrable with any frontend
 
 ---
 
-## 🔧 Installation
+## 🏗️ Tech Stack
+
+- **FastAPI** – Web framework
+- **Redis** – Cache and Pub/Sub
+- **APScheduler** – Scheduled polling
+- **WebSockets** – Real-time data updates
+- **Docker (optional)** – Containerization support
+
+---
+
+## 📦 Installation
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/betfair-realtime-service.git
-cd betfair-realtime-service
-python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+git clone https://github.com/yourusername/betfair-realtime-backend.git
+cd betfair-realtime-backend
 ````
 
----
+### 2. Create a virtual environment and install dependencies
 
-## ⚙️ Environment Variables
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-Create a `.env` file in the root directory with the following variables:
+### 3. Environment variables
+
+Create a `.env` file in the root directory:
 
 ```env
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_DB=0
-POLLING_INTERVAL=0.5  # in minutes
+REDIS_URL=redis://localhost:6379
+POLLING_INTERVAL=1  # Interval in minutes
 ```
 
 ---
 
-## 📂 Project Structure
+## 🧪 Running the Server
 
 ```bash
-.
-├── app/
-│   ├── main.py                # FastAPI entry point with lifespan
-│   ├── services/
-│   │   ├── api_client.py      # API client to fetch events/markets
-│   │   ├── redis_client.py    # Redis connection abstraction
-│   │   ├── scheduler.py       # APScheduler background jobs
-│   │   └── websocket_handler.py  # WebSocket connection handler
-├── requirements.txt
-└── README.md
+uvicorn src.main:app --reload
+```
+
+> Replace `src.main:app` with the correct import path if your main file is named differently.
+
+---
+
+## 🔌 WebSocket API
+
+### Endpoint
+
+```txt
+ws://localhost:8000/ws
+```
+
+### Message Format (from Frontend → Backend)
+
+#### To Subscribe to Events
+
+```json
+{ "type": "events" }
+```
+
+#### To Subscribe to a Market
+
+```json
+{ "type": "market", "event_id": "1234" }
 ```
 
 ---
 
-## ▶️ Running the Server
+### Backend → Frontend Messages
 
-```bash
-uvicorn app.main:app --reload
+* **Events Data**:
+
+```json
+{
+  "events": [
+    { "id": "1234", "name": "Match A vs B", "time": "..." },
+    ...
+  ]
+}
 ```
 
-* API will run on: `http://127.0.0.1:8000`
-* WebSocket endpoint: `ws://127.0.0.1:8000/ws`
+* **Markets Data**:
+
+```json
+{
+  "market_id": "5678",
+  "event_id": "1234",
+  "odds": [...]
+}
+```
 
 ---
 
 ## 🧠 How It Works
 
-### 1. **Lifespan Management**
+1. On server start:
 
-On startup:
+   * Redis client, Scheduler, and WebSocketManager are initialized in FastAPI's `lifespan`.
+   * Scheduler starts polling events at intervals defined in `.env`.
 
-* Initializes Redis client
-* Starts the event polling job
-* Sets up WebSocket manager
+2. When a WebSocket client connects:
 
-On shutdown:
+   * If they subscribe to `"events"`, they immediately receive cached events and future updates via Redis Pub/Sub.
+   * If they subscribe to a `"market"` with an `event_id`:
 
-* Closes Redis connection
-* Stops the scheduler gracefully
+     * A background job is started to poll that market.
+     * Market data is pushed to subscribed clients and cached in Redis.
 
-### 2. **Scheduler**
+3. When the last user leaves a market:
 
-* Fetches events every `POLLING_INTERVAL`
-* Fetches market data for active `event_ids`
-* Publishes both to Redis channels and stores the latest snapshot in Redis keys
-
-### 3. **WebSocket Flow**
-
-* Clients connect to `/ws`
-* Can subscribe to:
-
-  * All `events`
-  * Specific `markets` via `{ "event_id": "1234" }`
-* Real-time updates are sent from Redis Pub/Sub
-* Polling job is created on first subscriber, and removed when last user disconnects
+   * The polling job for that market is removed automatically to save resources.
 
 ---
 
-## 💻 Frontend Integration
+## 🧩 Frontend Integration Guide
 
-Any frontend (React, Vue, Angular, etc.) can connect via a WebSocket.
+You can use this backend with any frontend (React, Vue, etc.).
 
-### 🔌 WebSocket Usage Example (JavaScript)
+### Sample JavaScript Client
 
-```javascript
+```js
 const socket = new WebSocket("ws://localhost:8000/ws");
 
 socket.onopen = () => {
   // Subscribe to events
-  socket.send(JSON.stringify({}));
+  socket.send(JSON.stringify({ type: "events" }));
 
-  // OR subscribe to specific market
-  // socket.send(JSON.stringify({ event_id: "12345" }));
+  // Or subscribe to a specific market
+  socket.send(JSON.stringify({ type: "market", event_id: "1234" }));
 };
 
 socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log("📨 Received:", data);
-};
-
-socket.onclose = () => {
-  console.log("WebSocket disconnected.");
+  console.log("Received:", data);
 };
 ```
 
 ---
 
-## 📚 API Reference
+## 📁 Project Structure
 
-### `GET /`
-
-Returns a health check message.
-
-```json
-{ "message": "Betfair Real-time Data Service" }
+```
+src/
+├── main.py               # FastAPI app + lifespan
+├── services/
+│   ├── api_client.py     # External API calls
+│   ├── redis_client.py   # Redis helper
+│   ├── scheduler.py      # APScheduler logic
+│   └── websocket_handler.py # WebSocketManager class
+├── utils/
+│   └── processer.py     # Response processer
 ```
 
 ---
 
-## 📤 Publishing Format (Redis PubSub)
+## ✅ To Do / Contributions Welcome
 
-* Events channel: `events_channel`
-
-  * Redis Key: `events`
-* Markets channel: `markets_channel:{event_id}`
-
-  * Redis Key: `markets:{event_id}`
+* [ ] Add authentication
+* [ ] Dockerize the entire stack
+* [ ] Add test cases
 
 ---
 
-## 🧪 Testing Tips
+## 🧑‍💻 Author
 
-You can use tools like:
+Developed by \[Avnitt]
+Open to contributions and improvements!
 
-* **Postman** for health check
-* **RedisInsight** to inspect Redis keys
-* **wscat** or browser console to test WebSocket
+---
 
-```bash
-wscat -c ws://localhost:8000/ws
-```
+## 🛡️ License
 
-Then send:
+MIT License
 
-```json
-{}
-```
-
-or
-
-```json
-{ "event_id": "1234" }
 ```
 
 ---
-
-## 🧹 Cleanup
-
-* Polling jobs for a market are stopped automatically when no users are subscribed.
-* Redis connections and scheduler are gracefully shut down via FastAPI lifespan context.
-
----
-
-## 🤝 Contributing
-
-PRs are welcome! Please fork the repo and open a pull request.
-
----
-
-## 🪪 License
-
-MIT License. See `LICENSE` file.
-
----
-
-## 📞 Contact
-
-For questions or support, raise an issue or email `avnit2115@gmail.com`.

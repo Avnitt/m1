@@ -25,12 +25,14 @@ class WebSocketManager:
             while True:
                 message = await websocket.receive_text()
                 data = json.loads(message)
-                event_id = data.get("event_id")
+                msg_type = data.get("type")
 
-                if event_id:
-                    await self.subscribe_to_markets(event_id, websocket)
-                else:
+                if msg_type == "market" and "event_id" in data:
+                    await self.subscribe_to_markets(data["event_id"], websocket)
+                elif msg_type == "events":
                     await self.subscribe_to_events(websocket)
+                else:
+                    await websocket.send_text(json.dumps({"error": "Invalid message format"}))
 
         except WebSocketDisconnect:
             await self.disconnect_all(websocket)
