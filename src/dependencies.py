@@ -8,8 +8,30 @@ import os
 
 from .database import SessionDep
 from .models.user import User
+from .utils.hashing import verify_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+from dotenv import load_dotenv
+
+load_dotenv()
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+
+async def authenticate_user(db: SessionDep, username: str, password: str) -> User:
+    user = db.get(User, username)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    if not verify_password(password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password"
+        )
+    return user
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -29,41 +51,83 @@ async def get_current_user(
     try:
         payload = jwt.decode(
             token, 
-            os.getenv("JWT_SECRET_KEY"), 
-            algorithms=[os.getenv("JWT_ALGORITHM")]
+            JWT_SECRET_KEY, 
+            algorithms=[JWT_ALGORITHM]
         )
-        user_id: int = int(payload.get("sub"))
+        username = payload.get("sub")
     except ExpiredSignatureError:
         raise expired_exception
     except (JWTError, ValueError):
         raise credentials_exception
     
-    user = await db.get(User, user_id)
+    user = db.get(User, username)
     if user is None or user.refresh_token is None:
         raise credentials_exception
         
     return user
 
-def create_access_token(user_id: int):
+async def get_current_admin(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: SessionDep
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    expired_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Token expired",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    admin_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="User is not admin",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(
+            token, 
+            JWT_SECRET_KEY, 
+            algorithms=[JWT_ALGORITHM]
+        )
+        username = payload.get("sub")
+    except ExpiredSignatureError:
+        raise expired_exception
+    except (JWTError, ValueError):
+        raise credentials_exception
+    
+    user = db.get(User, username)
+    if user is None or user.refresh_token is None:
+        raise credentials_exception
+    
+    if not user.is_admin:
+        raise admin_exception
+        
+    return user
+
+def create_access_token(username: str):
     expires = timedelta(minutes=float(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15)))
     return jwt.encode(
         {
-            "sub": str(user_id),
+            "sub": username,
             "exp": datetime.utcnow() + expires,
             "type": "access"
         },
-        os.getenv("JWT_SECRET_KEY"),
-        algorithm=os.getenv("JWT_ALGORITHM")
+        JWT_SECRET_KEY,
+        algorithm=JWT_ALGORITHM
     )
 
-def create_refresh_token(user_id: int):
+def create_refresh_token(username: str):
     expires = timedelta(days=float(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7)))
     return jwt.encode(
         {
-            "sub": str(user_id),
+            "sub": username,
             "exp": datetime.utcnow() + expires,
             "type": "refresh"
         },
-        os.getenv("JWT_SECRET_KEY"),
-        algorithm=os.getenv("JWT_ALGORITHM")
+        JWT_SECRET_KEY,
+        algorithm=JWT_ALGORITHM
     )
+
