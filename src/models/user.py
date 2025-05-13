@@ -16,3 +16,6 @@ class User(SQLModel, table=True):
 
     def __str__(self):
         return f"User: {self.username}, Admin: {self.is_admin}, Active: {self.is_active}"
+    
+    def verify_hash(self, password):
+        if self.password == create_hash()
