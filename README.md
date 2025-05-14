@@ -257,15 +257,34 @@ socket.onmessage = (event) => {
 ## 📁 Project Structure
 
 ```
-src/
-├── main.py               # FastAPI app + lifespan
-├── services/
-│   ├── api_client.py     # External API calls
-│   ├── redis_client.py   # Redis helper
-│   ├── scheduler.py      # APScheduler logic
-│   └── websocket_handler.py # WebSocketManager class
-├── utils/
-│   └── processer.py     # Response processer
+src
+├── __init__.py
+├── database.py
+├── dependencies.py
+├── internal
+│   ├── __init__.py
+│   └── admin.py
+├── main.py
+├── models
+│   ├── __init__.py
+│   └── user.py
+├── routers
+│   ├── __init__.py
+│   ├── auth.py
+│   └── users.py
+├── schemas
+│   ├── __init__.py
+│   └── user.py
+├── services
+│   ├── __init__.py
+│   ├── api_client.py
+│   ├── redis_client.py
+│   ├── scheduler.py
+│   └── websocket_handler.py
+└── utils
+    ├── __init__.py
+    ├── hashing.py
+    └── processer.py
 ```
 
 ---
