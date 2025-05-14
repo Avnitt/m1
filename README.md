@@ -47,8 +47,12 @@ pip install -r requirements.txt
 Create a `.env` file in the root directory:
 
 ```env
-REDIS_URL=redis://localhost:6379
-POLLING_INTERVAL=1  # Interval in minutes
+BASE_URL=https://betfair-sports-casino-live-tv-result-odds.p.rapidapi.com/api/
+X_RAPIDAPI_KEY=
+REDIS_URL=redis://localhost:6379/0
+POLLING_INTERVAL=
+JWT_TOKEN_SECRET=
+JWT_ALGORITHM=
 ```
 
 ---
@@ -92,21 +96,113 @@ ws://localhost:8000/ws
 * **Events Data**:
 
 ```json
-{
-  "events": [
-    { "id": "1234", "name": "Match A vs B", "time": "..." },
-    ...
-  ]
-}
+[
+  {
+    "event_id": "e001",
+    "event_name": "Football Match 1",
+    "openDate": "2025-05-15T18:00:00Z",
+    "runners": [
+      {
+        "name": "Team A",
+        "backOdds": 1.7,
+        "layOdds": 1.8
+      },
+      {
+        "name": "Team B",
+        "backOdds": 2.1,
+        "layOdds": 2.2
+      }
+    ]
+  },
+  {
+    "event_id": "e002",
+    "event_name": "Football Match 2",
+    "openDate": "2025-05-16T20:00:00Z",
+    "runners": [
+      {
+        "name": "Team X",
+        "backOdds": 1.5,
+        "layOdds": 1.6
+      },
+      {
+        "name": "Team Y",
+        "backOdds": 2.3,
+        "layOdds": 2.4
+      }
+    ]
+  }
+]
 ```
 
 * **Markets Data**:
 
 ```json
 {
-  "market_id": "5678",
-  "event_id": "1234",
-  "odds": [...]
+  "bookMaker": [
+    {
+      "marketId": "b456",
+      "marketName": "Match Odds",
+      "statusName": "OPEN",
+      "minSetting": 500,
+      "maxSetting": 5000,
+      "sortPeriority": 1,
+      "runners": [
+        {
+          "selectionName": "Team A",
+          "selectionStatus": "ACTIVE",
+          "backOdds": 1.7,
+          "layOdds": 1.8
+        },
+        {
+          "selectionName": "Team B",
+          "selectionStatus": "ACTIVE",
+          "backOdds": 2.1,
+          "layOdds": 2.2
+        }
+      ]
+    }
+  ],
+  "fancy": [
+    {
+      "marketId": "f123",
+      "marketName": "Total Runs",
+      "statusName": "ACTIVE",
+      "runsNo": 125,
+      "runsYes": 130,
+      "oddsNo": 1.85,
+      "oddsYes": 1.95,
+      "minSetting": 100,
+      "maxSetting": 1000,
+      "sortingOrder": 1,
+      "catagory": "cricket"
+    },
+    {
+      "marketId": "f124",
+      "marketName": "Wickets in First 10 Overs",
+      "statusName": "ACTIVE",
+      "runsNo": 2,
+      "runsYes": 3,
+      "oddsNo": 2.0,
+      "oddsYes": 1.9,
+      "minSetting": 200,
+      "maxSetting": 2000,
+      "sortingOrder": 2,
+      "catagory": "cricket"
+    },
+    {
+      "marketId": "f125",
+      "marketName": "Powerplay Score Over/Under",
+      "statusName": "ACTIVE",
+      "runsNo": 45,
+      "runsYes": 50,
+      "oddsNo": 1.95,
+      "oddsYes": 2.0,
+      "minSetting": 300,
+      "maxSetting": 3000,
+      "sortingOrder": 3,
+      "catagory": "cricket"
+    }
+  ]
 }
 ```
 

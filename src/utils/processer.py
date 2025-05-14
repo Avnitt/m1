@@ -22,7 +22,7 @@ def process_event_data(input_data):
             "event_id": event_info.get('id'),
             "event_name": event_info.get('name'),
             "openDate": event_info.get('openDate'),
-            "runners": json.dumps(runners)
+            "runners": runners
         }
 
         processed.append(processed_entry)
