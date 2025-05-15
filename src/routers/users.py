@@ -41,7 +41,7 @@ async def create_user(user: UserCreate, session: SessionDep) -> UserOut:
     return user
 
 @router.patch("/{username}", response_model=UserOut)
-async def add_balance(username: str, request: BalanceRequest, session: SessionDep) -> UserOut:
+async def add_or_deduct_balance(username: str, request: BalanceRequest, session: SessionDep) -> UserOut:
     db_user = session.get(User, username)
     curr_balance = db_user.balance
     if not db_user:
@@ -63,7 +63,7 @@ async def add_balance(username: str, request: BalanceRequest, session: SessionDe
     return db_user
 
 @router.delete("/{username}", response_model=UserOut)
-def delete_hero(username: str, session: SessionDep) -> UserOut:
+def delete_user(username: str, session: SessionDep) -> UserOut:
     user = session.get(User, username)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

@@ -291,7 +291,6 @@ src
 
 ## ✅ To Do / Contributions Welcome
 
-* [ ] Add authentication
 * [ ] Dockerize the entire stack
 * [ ] Add test cases
 
