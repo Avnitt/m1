@@ -15,3 +15,4 @@ class Bet(SQLModel, table=True):
     potential_profit: float = 0.0
     potential_liability: float = 0.0
     created_at: datetime = Field(default_factory=datetime.utcnow)
+

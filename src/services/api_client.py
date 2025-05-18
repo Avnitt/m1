@@ -31,6 +31,7 @@ class APIClient:
             response = await self.client.get("/v3/front", params={"id": "4"})
             response.raise_for_status()
             logging.info(f"Fetched events successfully: {response.status_code}")
+            logging.info(response.json())
             return process_event_data(response.json())
         except Exception as e:
             logging.error(f"Error fetching events: {e}")
@@ -41,6 +42,7 @@ class APIClient:
             response = await self.client.get("/GetSession/", params={"eventid": event_id})
             response.raise_for_status()
             logging.info(f"Fetched markets successfully: {response.status_code}")
+            logging.info(response.json())
             return process_market_data(response.json())
         except Exception as e:
             logging.error(f"Error fetching markets: {e}")

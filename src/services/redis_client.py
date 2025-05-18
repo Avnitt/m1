@@ -32,7 +32,7 @@ class RedisClient:
             logging.error(f"Error fetching data from Redis for key {key}: {e}")
             return None
 
-    async def set(self, key: str, value: str, ex: int = 600):
+    async def set(self, key: str, value: str, ex: int = 18000):
         """
         Set data in Redis cache with optional expiration time (in seconds).
         """
