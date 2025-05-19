@@ -12,8 +12,8 @@ logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"],
-    dependencies=[Depends(get_current_admin)]
+    tags=["users"]
+    # dependencies=[Depends(get_current_admin)]
 )
 
 @router.get("/", response_model=list[UserOut])

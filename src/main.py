@@ -7,7 +7,7 @@ from .services.redis_client import RedisClient
 from .services.scheduler import SchedulerService
 from .services.websocket_handler import WebSocketManager
 from .database import create_db_and_tables
-from .routers import users, auth
+from .routers import users, auth, bet
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
@@ -35,6 +35,8 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(users.router)
 app.include_router(auth.router)
+# app.include_router(bet.router)
+
 
 @app.get("/")
 async def root():

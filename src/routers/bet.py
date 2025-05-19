@@ -1,57 +1,70 @@
 # endpoints/betting.py
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from models import User, Bet, MatchOrder
-from schemas import (
-    PlaceBetRequest, PlaceBetResponse, 
-    SettleBetRequest, CashoutRequest, 
-    BetHistoryResponse, UserBalanceResponse
+from ..models.bet import Bet
+from ..models.user import User
+from ..models.match_order import MatchOrder
+from ..schemas.bet import (
+    PlaceFancyBet, PlaceExchangeBet,
+    PlaceBetResponse, SettleBetRequest,
+    CashoutRequest, BetHistoryResponse,
 )
-from dependencies import get_current_user, get_db_session
-from services.betting_engine import place_bet_logic, settle_bet_logic, process_cashout_logic
+from ..schemas.user import UserOut
+from ..dependencies import get_current_user
+from ..database import SessionDep
+from ..services.betting_engine import place_exchange_bet, place_fancy_bet, settle_bet_logic, process_cashout
 
 router = APIRouter(prefix="/betting", tags=["Betting"])
 
-@router.post("/place_bet", response_model=PlaceBetResponse)
-async def place_bet(
-    payload: PlaceBetRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+@router.post("/place_fancy", response_model=PlaceBetResponse)
+async def place_fancy(
+    payload: PlaceFancyBet,
+    db: SessionDep,
+    user: User = Depends(get_current_user)
 ):
-    return await place_bet_logic(user, payload, db)
+    return place_fancy_bet(user, payload, db)
 
 
-@router.post("/settle_bet")
-async def settle_bet(
-    payload: SettleBetRequest,
-    db: AsyncSession = Depends(get_db_session)
+@router.post("/place_exchange", response_model=PlaceBetResponse)
+async def place_exchange(
+    payload: PlaceExchangeBet,
+    db: SessionDep,
+    user: User = Depends(get_current_user)
 ):
-    return await settle_bet_logic(payload, db)
+    return place_exchange_bet(user, payload, db)
 
 
-@router.post("/cashout")
-async def cashout(
-    payload: CashoutRequest,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
-):
-    return await process_cashout_logic(user, payload, db)
+# @router.post("/settle_bet")
+# async def settle_bet(
+#     payload: SettleBetRequest,
+#     db: SessionDep
+# ):
+#     return await settle_bet_logic(payload, db)
+
+
+# @router.post("/cashout")
+# async def cashout(
+#     payload: CashoutRequest,
+#     db: SessionDep,
+#     user: User = Depends(get_current_user)
+# ):
+#     return await process_cashout(user, payload, db)
 
 
 @router.get("/history", response_model=list[BetHistoryResponse])
 async def get_bet_history(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+    db: SessionDep,
+    user: User = Depends(get_current_user)
 ):
-    result = await db.execute(select(Bet).where(Bet.user_id == user.id).order_by(Bet.timestamp.desc()))
-    bets = result.scalars().all()
-    return [BetHistoryResponse.from_orm(b) for b in bets]
+    result = db.exec(select(Bet).where(Bet.username == user.username).order_by(Bet.timestamp.desc())).all()
+    return [BetHistoryResponse.model_validate(b) for b in result]
 
 
-@router.get("/balance", response_model=UserBalanceResponse)
+@router.get("/balance", response_model=UserOut)
 async def get_user_balance(
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db_session)
+    user: User = Depends(get_current_user)
 ):
-    return UserBalanceResponse(balance=user.balance)
+    return UserOut(
+        username=user.username,
+        balance=user.balance,
+        )

@@ -3,16 +3,21 @@ from typing import Optional
 from datetime import datetime
 
 class Bet(SQLModel, table=True):
+    __tablename__ = "bets"
+
     id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(foreign_key="user.username")
+    username: str = Field(foreign_key="users.username")
     market_id: str
-    runner: str
     odds: float
-    amount: float
-    bet_type: str  # "back" or "lay"
-    status: str = "unmatched"  # "matched", "unmatched", "settled"
-    matched_amount: float = 0.0
-    potential_profit: float = 0.0
-    potential_liability: float = 0.0
+    stake: float
+    selection: str
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class FancyBet(Bet):
+    pass
+
+class ExchangeBet(Bet):
+    exchange_type: str
+    status: str
+    matched_amount: str

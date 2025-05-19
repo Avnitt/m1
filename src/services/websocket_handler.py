@@ -115,7 +115,7 @@ class WebSocketManager:
                 await asyncio.sleep(30)
                 await websocket.send_json({"ping": "pong"})
         except Exception:
-            pass  # Disconnected
+            pass
         finally:
             self.ping_tasks.pop(websocket, None)
 
