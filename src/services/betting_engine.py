@@ -49,7 +49,7 @@ async def ensure_market(db: SessionDep, redis_client: RedisClient, event_id: str
                 runners = m.get("runners", [])
                 if runners:
                     for runner in runners:
-                        new_runner = Runner(market_id=market_id, selection_name=runner.selectionName)
+                        new_runner = Runner(market_id=market_id, selection_name=runner["selectionName"])
                         db.add(new_runner)
                         db.commit()
 
