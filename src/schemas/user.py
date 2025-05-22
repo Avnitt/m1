@@ -20,9 +20,5 @@ class Token(BaseModel):
 class RefreshRequest(BaseModel):
     refresh_token: str
 
-class BalanceRequest(BaseModel):
-    balance: float
-    type: str
-
 class PasswordChangeRequest(BaseModel):
     password: str

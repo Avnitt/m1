@@ -77,6 +77,3 @@ class RedisClient:
             logging.info("Redis connection closed.")
         except Exception as e:
             logging.error(f"Error closing Redis connection: {e}")
-
-# redis_client = RedisClient()
-# logging.info("Redis client initialized.")

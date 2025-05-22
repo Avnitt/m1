@@ -41,23 +41,19 @@ async def create_user(user: UserCreate, session: SessionDep) -> UserOut:
     return user
 
 @router.patch("/{username}", response_model=UserOut)
-async def add_or_deduct_balance(username: str, request: BalanceRequest, session: SessionDep) -> UserOut:
+async def update_balance(username: str, amount: float, session: SessionDep) -> UserOut:
     db_user = session.get(User, username)
     curr_balance = db_user.balance
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if request.type == "deposit":
-        curr_balance += request.balance
-
-    if request.type == "withdrawl" and request.balance <= curr_balance:
-        curr_balance = request.balance
-    else:
+    if amount < 0 and curr_balance < (amount * -1):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="can't withdraw more than current balance"
         )
-
+        
+    db_user.balance += amount
     session.commit()
     session.refresh(db_user)
     return db_user
