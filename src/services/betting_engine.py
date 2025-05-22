@@ -40,36 +40,49 @@ async def ensure_market(db: SessionDep, redis_client: RedisClient, event_id: str
 
     if result:
         return
-    
+
     data = await redis_client.get(f"markets:{event_id}")
+    if not data:
+        return  # Optionally raise an error
+
     markets = json.loads(data)
-    for category in ['bookMaker', 'fancy']:
+
+    for category in ['bookMaker', 'fancy', 'SESSIONS']:
         for m in markets.get(category, []):
             if m.get("marketId") == market_id:
-                runners = m.get("runners", [])
-                if runners:
-                    for runner in runners:
-                        new_runner = Runner(market_id=market_id, selection_name=runner["selectionName"])
-                        db.add(new_runner)
-                        db.commit()
-
-                else:
-                    for runner in ["Yes", "No"]:
-                        new_runner = Runner(market_id=market_id, selection_name=runner)
-                        db.add(new_runner)
-                        db.commit()
-
+                # Step 1: Insert Market (without runners)
                 new_market = Market(
                     event_id=event_id,
                     market_id=m["marketId"],
-                    market_name=m["marketName"],
-                    status=m["statusName"],
-                    runners=runners
+                    market_name=m.get("marketName", ""),
+                    status=m.get("statusName", ""),
                 )
                 db.add(new_market)
                 db.commit()
-                return new_market
 
+                # Step 2: Determine runners
+                runners = m.get("runners")
+
+                if runners and isinstance(runners, list) and len(runners) > 0:
+                    for runner in runners:
+                        selection_name = runner.get("selectionName")
+                        if selection_name:
+                            new_runner = Runner(
+                                market_id=market_id,
+                                selection_name=selection_name
+                            )
+                            db.add(new_runner)
+                else:
+                    # Add default Yes/No runners
+                    for name in ["Yes", "No"]:
+                        new_runner = Runner(
+                            market_id=market_id,
+                            selection_name=name
+                        )
+                        db.add(new_runner)
+
+                db.commit()
+                return new_market
 
 def place_bet_logic(db: SessionDep, username: str, bet_data: BetCreate) -> Bet:
     user = db.get(User, username)
