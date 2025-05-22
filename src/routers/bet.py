@@ -1,6 +1,6 @@
 # endpoints/betting.py
 from typing import List
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 from ..models.bet import Bet, Event, Market
@@ -25,11 +25,15 @@ async def place_bet(
     db: SessionDep,
     user: User = Depends(get_current_user)
 ):
-    redis_client = request.app.state.redis_client
-    await ensure_event(db, redis_client, event_id)
-    await ensure_market(db, redis_client, event_id, payload.market_id)
-    return place_bet_logic(db, user.username, payload)
-
+    try:
+        redis_client = request.app.state.redis_client
+        await ensure_event(db, redis_client, event_id)
+        await ensure_market(db, redis_client, event_id, payload.market_id)
+        return place_bet_logic(db, user.username, payload)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/settle_bet")
 async def settle_bet(
