@@ -1,13 +1,19 @@
 # endpoints/betting.py
+from typing import List
 from fastapi import APIRouter, Depends, Request
 from sqlmodel import select
-from ..models.bet import Bet
+from sqlalchemy.orm import selectinload
+from ..models.bet import Bet, Event, Market
 from ..models.user import User
-from ..schemas.bet import BetCreate, BetHistory, BetResponse, BetSettle
+from ..schemas.bet import BetCreate, BetHistory, BetResponse, BetSettle, EventResponse, MarketResponse
 from ..schemas.user import UserOut
-from ..dependencies import get_current_user
+from ..dependencies import get_current_admin, get_current_user
 from ..database import SessionDep
 from ..services.betting_engine import place_bet_logic, settle_bets_logic, process_cashout_logic, ensure_event, ensure_market
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(prefix="/betting", tags=["betting"])
 
@@ -59,3 +65,24 @@ async def get_user_balance(
         username=user.username,
         balance=user.balance,
         )
+
+@router.get("/events", response_model=List[EventResponse])
+async def get_events(
+    db: SessionDep,
+    # admin: User = Depends(get_current_admin)
+):
+    stmt = select(Event).order_by(Event.start_time.desc())
+    result = db.exec(stmt).all()
+    return [EventResponse.model_validate(b.model_dump()) for b in result]
+    
+
+@router.get("/events/{event_id}", response_model=List[MarketResponse])
+async def get_markets(
+    event_id: str,
+    db: SessionDep,
+    # admin: User = Depends(get_current_admin)
+):
+    stmt = select(Market).where(Market.event_id == event_id).options(selectinload(Market.bets)).order_by(Market.market_id.desc())
+    result = db.exec(stmt).all()
+    logging.info(result)
+    return [MarketResponse.model_validate(b) for b in result]

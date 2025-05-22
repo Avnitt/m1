@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 import logging
 
 from .services.api_client import APIClient
@@ -32,6 +33,19 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete")
 
 app = FastAPI(lifespan=lifespan)
+
+
+origins = [
+    "http://localhost:8081",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # You can use ["*"] for all origins (not recommended in production)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(users.router)
 app.include_router(auth.router)

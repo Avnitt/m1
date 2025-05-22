@@ -1,6 +1,8 @@
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
+
+from src.models.bet import Bet
 
 class BetCreate(BaseModel):
     market_id: str
@@ -36,8 +38,18 @@ class BetSettle(BaseModel):
     selection: str
 
 class EventResponse(BaseModel):
+    event_id: str
     event_name: str
     start_time: datetime
 
+    class Config:
+        from_attributes = True
+
 class MarketResponse(BaseModel):
+    market_id: str
     market_name: str
+    status: str
+    bets: Optional[List[BetHistory]] = None
+
+    class Config:
+        from_attributes = True
