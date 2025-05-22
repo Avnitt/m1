@@ -22,3 +22,7 @@ class RefreshRequest(BaseModel):
 
 class PasswordChangeRequest(BaseModel):
     password: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str

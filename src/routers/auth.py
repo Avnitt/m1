@@ -10,7 +10,7 @@ from ..database import SessionDep
 from ..dependencies import create_access_token, create_refresh_token, authenticate_user, get_current_admin, get_current_user
 from ..utils.hashing import get_password_hash
 from ..models.user import User
-from ..schemas.user import RefreshRequest, Token, UserOut, PasswordChangeRequest
+from ..schemas.user import LoginRequest, RefreshRequest, Token, UserOut, PasswordChangeRequest
 
 from dotenv import load_dotenv
 
@@ -23,11 +23,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/token", response_model=Token)
 async def login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    payload: LoginRequest,
     db: SessionDep
 ):
     try:
-        user = await authenticate_user(db, form_data.username, form_data.password)
+        user = await authenticate_user(db, payload.username, payload.password)
     except HTTPException as e:
         raise e
     

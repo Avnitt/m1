@@ -38,3 +38,6 @@ class BetSettle(BaseModel):
 class EventResponse(BaseModel):
     event_name: str
     start_time: datetime
+
+class MarketResponse(BaseModel):
+    market_name: str
