@@ -76,13 +76,22 @@ async def get_events(
     return [EventResponse.model_validate(b.model_dump()) for b in result]
     
 
-@router.get("/events/{event_id}", response_model=List[MarketResponse])
+@router.get("/markets/{event_id}", response_model=List[MarketResponse])
 async def get_markets(
     event_id: str,
     db: SessionDep,
     # admin: User = Depends(get_current_admin)
 ):
-    stmt = select(Market).where(Market.event_id == event_id).options(selectinload(Market.bets)).order_by(Market.market_id.desc())
+    stmt = select(Market).where(Market.event_id == event_id).order_by(Market.market_id.desc())
     result = db.exec(stmt).all()
-    logging.info(result)
-    return [MarketResponse.model_validate(b) for b in result]
+    return [MarketResponse.model_validate(b.model_dump()) for b in result]
+
+@router.get("/bets/{market_id}", response_model=List[BetResponse])
+async def get_bets(
+    market_id: str,
+    db: SessionDep,
+    # admin: User = Depends(get_current_admin)
+):
+    stmt = select(Bet).where(Bet.market_id == market_id).order_by(Bet.placed_at.desc())
+    result = db.exec(stmt).all()
+    return [BetResponse.model_validate(b.model_dump()) for b in result]

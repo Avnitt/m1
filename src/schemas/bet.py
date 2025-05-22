@@ -49,7 +49,6 @@ class MarketResponse(BaseModel):
     market_id: str
     market_name: str
     status: str
-    bets: Optional[List[BetHistory]] = None
 
     class Config:
         from_attributes = True
