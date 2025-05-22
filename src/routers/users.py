@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import select
 from ..models.user import User
-from ..schemas.user import UserCreate, UserOut, BalanceRequest
+from ..schemas.user import UserCreate, UserOut
 from ..database import SessionDep
 from ..dependencies import get_current_admin
 from ..utils.hashing import get_password_hash

@@ -1,5 +1,5 @@
 # endpoints/betting.py
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlmodel import select
 from ..models.bet import Bet
 from ..models.user import User
